@@ -1,1 +1,1065 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나의 허브</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard-Regular&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14181f;
+    --panel:#1c222b;
+    --panel-alt:#232a34;
+    --line:#333c48;
+    --text:#edeae3;
+    --muted:#8b93a1;
+    --accent:#4fb286;
+    --accent-dim:#33604a;
+    --gold:#d9a441;
+    --danger:#e2665a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Pretendard-Regular', -apple-system, sans-serif;
+    line-height:1.5;
+    padding-bottom:60px;
+  }
+  button,input,textarea{font:inherit;}
+  button{cursor:pointer;}
+  header{padding:36px 20px 20px;}
+  .header-top{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  header h1{
+    font-family:'Gowun Batang', serif;
+    font-size:28px; font-weight:700; margin:0 0 6px; letter-spacing:-0.5px;
+  }
+  header p{margin:0; color:var(--muted); font-size:14px;}
+  .logout-btn{
+    background:none; border:1px solid var(--line); color:var(--muted);
+    border-radius:8px; padding:6px 12px; font-size:12px; flex-shrink:0;
+  }
 
+  /* ---------- 로그인 ---------- */
+  .login-gate{
+    position:fixed; inset:0; z-index:200;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg); padding:24px;
+  }
+  .login-box{width:100%; max-width:340px;}
+  .login-box h2{
+    font-family:'Gowun Batang', serif; font-size:22px; margin:0 0 18px;
+  }
+  .login-box input{
+    width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:12px 14px; font-size:15px; margin-bottom:10px;
+  }
+  .login-box button{
+    width:100%; background:var(--accent); border:none; color:var(--bg);
+    border-radius:8px; padding:12px; font-size:15px; font-weight:700; margin-top:4px;
+  }
+  .login-box button:disabled{opacity:.55; cursor:default;}
+  .login-error{color:var(--danger); font-size:13px; margin-top:10px; min-height:18px;}
+  .login-hint{color:var(--muted); font-size:12px; margin-top:20px; line-height:1.5;}
+
+  .menu{padding:0 20px;}
+  .item{border-bottom:1px solid var(--line);}
+  .item:first-child{border-top:1px solid var(--line);}
+  .item .row{
+    display:flex; align-items:baseline; gap:12px; padding:18px 4px;
+    cursor:pointer; user-select:none;
+  }
+  .item .row:active{opacity:.6;}
+  .item .row .num{
+    color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; flex-shrink:0;
+  }
+  .item .row .title{font-size:17px; font-weight:700; flex:1;}
+  .item .row .arrow{color:var(--muted); font-size:16px;}
+
+  /* ---------- 토스트 ---------- */
+  .toast{
+    position:fixed; left:50%; bottom:24px; z-index:400;
+    transform:translate(-50%, 20px); opacity:0; pointer-events:none;
+    width:max-content; max-width:calc(100% - 32px);
+    background:var(--panel-alt); border:1px solid var(--line); color:var(--text);
+    border-radius:10px; padding:9px 12px; font-size:13px;
+    box-shadow:0 12px 30px rgba(0,0,0,.35);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+
+  /* ---------- 모달 ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; z-index:100;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px 16px;
+    background:rgba(10,12,16,0); opacity:0; pointer-events:none;
+    transition:opacity .25s ease, background .25s ease;
+  }
+  .modal-overlay.show{
+    opacity:1; pointer-events:auto; background:rgba(10,12,16,.62);
+  }
+  .modal-box{
+    width:100%; max-width:420px; max-height:80vh; background:var(--panel);
+    border-radius:18px; overflow-y:auto;
+    box-shadow:0 24px 70px rgba(0,0,0,.55);
+    transform:translateY(28px) scale(.94); opacity:0;
+    transition:transform .3s cubic-bezier(.22,.85,.32,1.1), opacity .22s ease;
+  }
+  .modal-overlay.show .modal-box{transform:translateY(0) scale(1); opacity:1;}
+  .modal-header{
+    position:sticky; top:0; z-index:2;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 8px 12px 18px; background:var(--panel);
+    border-bottom:1px solid var(--line);
+  }
+  .modal-header .modal-title{font-family:'Gowun Batang', serif; font-size:18px;}
+  .modal-header .modal-close{
+    background:none; border:none; color:var(--muted); font-size:24px;
+    line-height:1; padding:8px 12px;
+  }
+  .modal-body{padding:16px 18px 22px;}
+
+  /* ---------- 캘린더 ---------- */
+  .cal-nav{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
+  }
+  .cal-nav button{
+    background:none; border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:4px 10px; font-size:14px;
+  }
+  .cal-nav .ym{font-family:'Gowun Batang', serif; font-size:16px;}
+  .cal-grid{
+    display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center;
+  }
+  .cal-grid .wd{color:var(--muted); font-size:11px; padding-bottom:4px;}
+  .cal-day{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:8px; font-size:13px; position:relative; color:var(--text); cursor:pointer;
+  }
+  .cal-day.empty{visibility:hidden; cursor:default;}
+  .cal-day.today{border:1px solid var(--gold); color:var(--gold);}
+  .cal-day.has-event::after{
+    content:""; position:absolute; bottom:4px; width:4px; height:4px;
+    border-radius:50%; background:var(--accent);
+  }
+  .cal-day.selected{background:var(--accent); color:var(--bg); font-weight:700;}
+  .cal-day.selected.has-event::after{background:var(--bg);}
+  .day-detail{margin-top:14px; border-top:1px solid var(--line); padding-top:12px;}
+  .day-detail .d-title{font-size:13px; color:var(--muted); margin-bottom:8px;}
+  .ev-list{list-style:none; margin:0 0 10px; padding:0;}
+  .ev-list li{
+    background:var(--panel-alt); padding:8px 10px; border-radius:6px; margin-bottom:6px;
+    font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:8px;
+  }
+  .ev-list li .ev-text{min-width:0; overflow-wrap:anywhere;}
+  .ev-list li button{background:none; border:none; color:var(--muted); font-size:16px; padding:2px 4px; flex-shrink:0;}
+  .add-row{display:flex; gap:6px;}
+  .add-row input{
+    flex:1; background:var(--panel); border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:8px 10px; font-size:14px; min-width:0;
+  }
+  .add-row button{
+    background:var(--accent); border:none; color:var(--bg); border-radius:6px;
+    padding:8px 14px; font-size:14px; font-weight:600;
+  }
+
+  /* ---------- AI 챗 ---------- */
+  .chat-log{
+    max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;
+    margin-bottom:10px; padding-right:2px;
+  }
+  .msg{max-width:82%; padding:8px 12px; border-radius:12px; font-size:14px; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .msg.user{align-self:flex-end; background:var(--accent); color:var(--bg); border-bottom-right-radius:2px;}
+  .msg.ai{align-self:flex-start; background:var(--panel-alt); border-bottom-left-radius:2px;}
+  .msg.thinking{opacity:.6;}
+  .chat-input-row{display:flex; gap:6px; margin-bottom:10px;}
+  .chat-input-row textarea{
+    flex:1; resize:none; background:var(--panel); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; height:44px; min-width:0;
+  }
+  .chat-input-row button{
+    background:var(--accent); border:none; color:var(--bg); border-radius:8px;
+    padding:0 16px; font-weight:600; flex-shrink:0;
+  }
+  .chat-input-row button:disabled{opacity:.55; cursor:default;}
+  .chat-settings{font-size:12px; color:var(--muted);}
+  .chat-settings summary{cursor:pointer; margin-bottom:8px;}
+  .chat-settings input{
+    width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:8px 10px; font-size:13px; margin-top:6px; margin-bottom:6px;
+  }
+  .chat-settings .setting-note{line-height:1.5; margin-top:4px;}
+  .chat-actions{display:flex; justify-content:flex-end; margin-top:4px;}
+  .chat-clear{
+    background:none; border:1px solid var(--line); color:var(--muted);
+    border-radius:6px; padding:6px 10px; font-size:12px;
+  }
+
+  /* ---------- 랜덤 공부 ---------- */
+  .study-card{
+    background:var(--panel-alt); border-radius:12px; padding:34px 16px; text-align:center;
+    margin-bottom:14px; min-height:90px; display:flex; align-items:center; justify-content:center;
+  }
+  .study-card .word{font-family:'Gowun Batang', serif; font-size:24px; overflow-wrap:anywhere;}
+  .study-card.empty .word{color:var(--muted); font-size:14px; font-family:inherit;}
+  .study-btns{display:flex; gap:8px; margin-bottom:14px;}
+  .study-btns button{
+    flex:1; background:var(--accent); border:none; color:var(--bg); border-radius:8px;
+    padding:10px; font-size:14px; font-weight:600;
+  }
+  .study-list-wrap details{font-size:12px; color:var(--muted);}
+  .study-list-wrap summary{cursor:pointer; margin-bottom:8px;}
+  .study-list-wrap textarea{
+    width:100%; min-height:100px; background:var(--panel); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:10px; font-size:13px; font-family:inherit; resize:vertical;
+  }
+  .study-list-wrap .save-btn{
+    margin-top:6px; background:none; border:1px solid var(--accent); color:var(--accent);
+    border-radius:6px; padding:6px 12px; font-size:13px;
+  }
+
+  /* ---------- 빈 칸 ---------- */
+  .empty-guide{font-size:13px; color:var(--muted);}
+  .empty-guide code{
+    display:block; background:var(--panel-alt); padding:10px; border-radius:8px; margin-top:8px;
+    font-size:12px; overflow-x:auto; white-space:pre;
+  }
+</style>
+</head>
+<body>
+
+<div id="loginGate" class="login-gate" style="display:none">
+  <div class="login-box">
+    <h2>로그인</h2>
+    <input type="email" id="loginEmail" placeholder="이메일" autocomplete="username">
+    <input type="password" id="loginPw" placeholder="비밀번호" autocomplete="current-password">
+    <button id="loginBtn">로그인</button>
+    <div class="login-error" id="loginError"></div>
+    <p class="login-hint">계정이 없다면 Firebase 콘솔 → Authentication → Users에서 먼저 만들어두세요.</p>
+  </div>
+</div>
+
+<div id="appRoot">
+  <header>
+    <div class="header-top">
+      <div>
+        <h1>나의 허브</h1>
+        <p>문장을 눌러서 기능을 펼쳐보세요</p>
+      </div>
+      <button id="logoutBtn" class="logout-btn" style="display:none">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="menu" id="menu"></div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle"></span>
+        <button class="modal-close" id="modalClose" aria-label="닫기">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+  <div id="poolPanels" style="display:none"></div>
+</div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<!-- Firebase: 현재 릴리스 기준 12.19.0 -->
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+
+<script>
+/* =========================================================
+   0. Firebase 설정
+   ---------------------------------------------------------
+   아래 firebaseConfig는 Firebase 콘솔에서 받은 '웹 앱 구성'을
+   그대로 넣으면 됩니다.
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+/* =========================================================
+   1. 기본 데이터 / 전역 상태
+   ========================================================= */
+const DEFAULT_KEYWORDS = ['예시 키워드1', '예시 키워드2', '예시 키워드3'];
+
+let useCloud = false;
+let db = null;
+let auth = null;
+let hubDataRef = null;
+let unsubscribeHub = null;
+let saveQueue = Promise.resolve();
+
+let hubData = {
+  events: {},
+  studyKeywords: [...DEFAULT_KEYWORDS]
+};
+
+let activeRedraw = null;
+const refreshFns = {};
+let currentContentId = null;
+
+const loginGate = document.getElementById('loginGate');
+const appRoot = document.getElementById('appRoot');
+const logoutBtn = document.getElementById('logoutBtn');
+const loginBtn = document.getElementById('loginBtn');
+const loginEmail = document.getElementById('loginEmail');
+const loginPw = document.getElementById('loginPw');
+const loginError = document.getElementById('loginError');
+const toastEl = document.getElementById('toast');
+
+function isFirebaseConfigured(config){
+  return Object.values(config).every(value => {
+    const text = String(value || '').trim();
+    return text && !text.startsWith('YOUR_');
+  });
+}
+
+function showToast(message){
+  toastEl.textContent = message;
+  toastEl.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toastEl.classList.remove('show'), 2500);
+}
+
+function getLocalEvents(){
+  try{
+    return JSON.parse(localStorage.getItem('hub_events') || '{}') || {};
+  }catch(e){
+    console.error('일정 불러오기 실패:', e);
+    return {};
+  }
+}
+
+function getLocalKeywords(){
+  try{
+    const parsed = JSON.parse(localStorage.getItem('hub_study_keywords') || 'null');
+    return Array.isArray(parsed) && parsed.length ? parsed : [...DEFAULT_KEYWORDS];
+  }catch(e){
+    console.error('키워드 불러오기 실패:', e);
+    return [...DEFAULT_KEYWORDS];
+  }
+}
+
+function loadLocalData(){
+  hubData.events = getLocalEvents();
+  hubData.studyKeywords = getLocalKeywords();
+}
+
+function saveLocalData(){
+  localStorage.setItem('hub_events', JSON.stringify(hubData.events));
+  localStorage.setItem('hub_study_keywords', JSON.stringify(hubData.studyKeywords));
+}
+
+/* =========================================================
+   2. Firebase 초기화
+   ---------------------------------------------------------
+   중요한 변경:
+   - Firebase는 초기화만 먼저 함.
+   - Firestore 리스너는 '로그인 성공 후'에 시작함.
+   - 사용자별 경로 users/{uid}/hub/main 사용.
+   ========================================================= */
+if(isFirebaseConfigured(firebaseConfig)){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    useCloud = true;
+  }catch(error){
+    console.error('Firebase 초기화 실패 → 로컬 저장 모드:', error);
+    useCloud = false;
+    db = null;
+    auth = null;
+  }
+}
+
+if(!useCloud){
+  loadLocalData();
+}
+
+/* =========================================================
+   3. 데이터 저장
+   ========================================================= */
+function persistData(){
+  if(!useCloud || !hubDataRef){
+    saveLocalData();
+    return Promise.resolve();
+  }
+
+  const payload = {
+    events: hubData.events,
+    studyKeywords: hubData.studyKeywords
+  };
+
+  // 빠르게 여러 번 눌러도 Firestore 쓰기가 순서대로 실행되도록 함.
+  saveQueue = saveQueue
+    .then(() => hubDataRef.set(payload, {merge:true}))
+    .catch(error => {
+      console.error('Firestore 저장 실패:', error);
+      showToast('클라우드 저장에 실패했어요. 규칙을 확인해줘.');
+    });
+
+  return saveQueue;
+}
+
+/* =========================================================
+   4. Firebase 사용자별 동기화
+   ========================================================= */
+function stopCloudSync(){
+  if(unsubscribeHub){
+    unsubscribeHub();
+    unsubscribeHub = null;
+  }
+  hubDataRef = null;
+}
+
+function startCloudSync(user){
+  stopCloudSync();
+
+  // 사용자별 데이터 저장 위치
+  hubDataRef = db
+    .collection('users')
+    .doc(user.uid)
+    .collection('hub')
+    .doc('main');
+
+  unsubscribeHub = hubDataRef.onSnapshot(doc => {
+    if(doc.exists){
+      const data = doc.data() || {};
+      hubData.events = data.events && typeof data.events === 'object' ? data.events : {};
+      hubData.studyKeywords = Array.isArray(data.studyKeywords) && data.studyKeywords.length
+        ? data.studyKeywords
+        : [...DEFAULT_KEYWORDS];
+    }else{
+      hubData = {
+        events: {},
+        studyKeywords: [...DEFAULT_KEYWORDS]
+      };
+      hubDataRef.set(hubData).catch(error => {
+        console.error('초기 Firestore 문서 생성 실패:', error);
+        showToast('Firestore 저장 권한을 확인해줘.');
+      });
+    }
+
+    if(activeRedraw) activeRedraw();
+  }, error => {
+    console.error('Firestore 실시간 동기화 오류:', error);
+    showToast('Firestore 연결에 실패했어요. Rules를 확인해줘.');
+  });
+}
+
+/* =========================================================
+   5. 로그인 게이트
+   ========================================================= */
+if(useCloud){
+  // Firebase를 쓰는 경우 로그인 확인 전에는 앱을 숨김.
+  loginGate.style.display = 'flex';
+  appRoot.style.display = 'none';
+
+  auth.onAuthStateChanged(user => {
+    loginError.textContent = '';
+
+    if(user){
+      loginGate.style.display = 'none';
+      appRoot.style.display = '';
+      logoutBtn.style.display = 'inline-block';
+      startCloudSync(user);
+    }else{
+      stopCloudSync();
+      loginGate.style.display = 'flex';
+      appRoot.style.display = 'none';
+      logoutBtn.style.display = 'none';
+      closeModal();
+    }
+  });
+
+  async function doLogin(){
+    const email = loginEmail.value.trim();
+    const pw = loginPw.value;
+
+    loginError.textContent = '';
+    if(!email || !pw){
+      loginError.textContent = '이메일과 비밀번호를 입력해줘.';
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = '로그인 중...';
+
+    try{
+      await auth.signInWithEmailAndPassword(email, pw);
+    }catch(error){
+      console.error('로그인 실패:', error);
+      loginError.textContent = '로그인 실패: 이메일 또는 비밀번호를 확인해줘.';
+    }finally{
+      loginBtn.disabled = false;
+      loginBtn.textContent = '로그인';
+    }
+  }
+
+  loginBtn.addEventListener('click', doLogin);
+  loginPw.addEventListener('keydown', e => {
+    if(e.key === 'Enter') doLogin();
+  });
+  logoutBtn.addEventListener('click', async () => {
+    try{
+      await auth.signOut();
+    }catch(error){
+      console.error('로그아웃 실패:', error);
+      showToast('로그아웃에 실패했어요.');
+    }
+  });
+}else{
+  loginGate.style.display = 'none';
+  appRoot.style.display = '';
+  logoutBtn.style.display = 'none';
+}
+
+/* =========================================================
+   6. 공통 메뉴 / 모달
+   ========================================================= */
+const menuEl = document.getElementById('menu');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalClose = document.getElementById('modalClose');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const poolPanels = document.getElementById('poolPanels');
+
+const sections = [
+  {id:'calendar', title:'일정 보기', render:renderCalendar},
+  {id:'chat', title:'AI랑 대화하기', render:renderChat},
+  {id:'study', title:'랜덤 공부하기', render:renderStudy},
+  {id:'blank', title:'어쩌구 저쩌구 (예시 칸)', render:renderBlank}
+];
+
+sections.forEach((section, index) => {
+  const item = document.createElement('div');
+  item.className = 'item';
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <span class="num">${String(index + 1).padStart(2,'0')}</span>
+    <span class="title"></span>
+    <span class="arrow">›</span>
+  `;
+  row.querySelector('.title').textContent = section.title;
+  row.addEventListener('click', () => openModal(section.id));
+
+  item.appendChild(row);
+  menuEl.appendChild(item);
+});
+
+function openModal(id){
+  const section = sections.find(s => s.id === id);
+  if(!section) return;
+
+  modalTitle.textContent = section.title;
+
+  let content = document.getElementById('content-' + id);
+  if(!content){
+    content = document.createElement('div');
+    content.id = 'content-' + id;
+    section.render(content);
+  }
+
+  modalBody.appendChild(content);
+  currentContentId = id;
+  modalOverlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  activeRedraw = refreshFns[id] || null;
+}
+
+function closeModal(){
+  modalOverlay.classList.remove('show');
+  document.body.style.overflow = '';
+  activeRedraw = null;
+
+  const closingId = currentContentId;
+  currentContentId = null;
+
+  setTimeout(() => {
+    if(closingId){
+      const content = document.getElementById('content-' + closingId);
+      if(content) poolPanels.appendChild(content);
+    }
+  }, 300);
+}
+
+modalClose.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', e => {
+  if(e.target === modalOverlay) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeModal();
+});
+
+/* =========================================================
+   7. 일정 보기
+   ========================================================= */
+function renderCalendar(root){
+  const now = new Date();
+  let viewY = now.getFullYear();
+  let viewM = now.getMonth();
+  let selectedDate = fmtDate(now);
+
+  root.innerHTML = `
+    <div class="cal-nav">
+      <button type="button" id="prevM">‹ 이전</button>
+      <span class="ym" id="ymLabel"></span>
+      <button type="button" id="nextM">다음 ›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="day-detail">
+      <div class="d-title" id="dTitle"></div>
+      <ul class="ev-list" id="evList"></ul>
+      <div class="add-row">
+        <input type="text" id="evInput" placeholder="일정 내용 입력" maxlength="200">
+        <button type="button" id="evAdd">추가</button>
+      </div>
+    </div>
+  `;
+
+  const grid = root.querySelector('#calGrid');
+  const ymLabel = root.querySelector('#ymLabel');
+  const dTitle = root.querySelector('#dTitle');
+  const evList = root.querySelector('#evList');
+  const evInput = root.querySelector('#evInput');
+
+  function getEvents(){
+    return hubData.events || {};
+  }
+
+  function drawMonth(){
+    const events = getEvents();
+    const firstDay = new Date(viewY, viewM, 1).getDay();
+    const lastDate = new Date(viewY, viewM + 1, 0).getDate();
+    const todayStr = fmtDate(new Date());
+
+    ymLabel.textContent = `${viewY}년 ${viewM + 1}월`;
+
+    grid.innerHTML = ['일','월','화','수','목','금','토']
+      .map(w => `<div class="wd">${w}</div>`).join('');
+
+    for(let i = 0; i < firstDay; i++){
+      const empty = document.createElement('div');
+      empty.className = 'cal-day empty';
+      grid.appendChild(empty);
+    }
+
+    for(let d = 1; d <= lastDate; d++){
+      const dateStr = fmtDate(new Date(viewY, viewM, d));
+      const day = document.createElement('div');
+      const hasEvent = Array.isArray(events[dateStr]) && events[dateStr].length > 0;
+
+      day.className = 'cal-day';
+      if(dateStr === todayStr) day.classList.add('today');
+      if(dateStr === selectedDate) day.classList.add('selected');
+      if(hasEvent) day.classList.add('has-event');
+      day.textContent = d;
+      day.dataset.date = dateStr;
+      grid.appendChild(day);
+    }
+
+    drawDayDetail();
+  }
+
+  function drawDayDetail(){
+    const events = getEvents();
+    const list = Array.isArray(events[selectedDate]) ? events[selectedDate] : [];
+    dTitle.textContent = selectedDate + ' 일정';
+    evList.innerHTML = '';
+
+    if(!list.length){
+      const emptyLi = document.createElement('li');
+      emptyLi.style.cssText = 'color:var(--muted); background:none; padding-left:0;';
+      emptyLi.textContent = '등록된 일정 없음';
+      evList.appendChild(emptyLi);
+      return;
+    }
+
+    list.forEach((eventText, index) => {
+      const li = document.createElement('li');
+
+      const span = document.createElement('span');
+      span.className = 'ev-text';
+      span.textContent = eventText;
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.textContent = '×';
+      delBtn.setAttribute('aria-label', `${index + 1}번째 일정 삭제`);
+      delBtn.addEventListener('click', async () => {
+        const eventsNow = getEvents();
+        if(!Array.isArray(eventsNow[selectedDate])) return;
+
+        eventsNow[selectedDate].splice(index, 1);
+        if(eventsNow[selectedDate].length === 0){
+          delete eventsNow[selectedDate];
+        }
+
+        hubData.events = eventsNow;
+        drawMonth();
+        await persistData();
+      });
+
+      li.appendChild(span);
+      li.appendChild(delBtn);
+      evList.appendChild(li);
+    });
+  }
+
+  grid.addEventListener('click', e => {
+    const day = e.target.closest('.cal-day[data-date]');
+    if(!day) return;
+    selectedDate = day.dataset.date;
+    drawMonth();
+  });
+
+  root.querySelector('#prevM').addEventListener('click', () => {
+    viewM--;
+    if(viewM < 0){viewM = 11; viewY--;}
+    drawMonth();
+  });
+
+  root.querySelector('#nextM').addEventListener('click', () => {
+    viewM++;
+    if(viewM > 11){viewM = 0; viewY++;}
+    drawMonth();
+  });
+
+  async function addEvent(){
+    const value = evInput.value.trim();
+    if(!value) return;
+
+    const events = getEvents();
+    if(!Array.isArray(events[selectedDate])) events[selectedDate] = [];
+    events[selectedDate].push(value);
+    hubData.events = events;
+    evInput.value = '';
+    drawMonth();
+    await persistData();
+  }
+
+  root.querySelector('#evAdd').addEventListener('click', addEvent);
+  evInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter') addEvent();
+  });
+
+  refreshFns.calendar = drawMonth;
+  drawMonth();
+}
+
+function fmtDate(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+/* =========================================================
+   8. AI랑 대화하기 (Gemini API)
+   ---------------------------------------------------------
+   중요:
+   - Gemini API 키를 코드에 넣지 않음.
+   - 브라우저의 localStorage에 사용자가 직접 입력한 키만 저장.
+   - 요청 시 URL query에 key를 넣지 않고 x-goog-api-key 헤더 사용.
+   - 현재 기본 모델: gemini-3.6-flash
+   ========================================================= */
+function renderChat(root){
+  const userUid = useCloud && auth?.currentUser ? auth.currentUser.uid : 'local';
+  const historyKey = `hub_chat_history_${userUid}`;
+
+  root.innerHTML = `
+    <details class="chat-settings">
+      <summary>⚙ API 설정</summary>
+      <input type="password" id="apiKey" placeholder="Gemini API 키 붙여넣기" autocomplete="off">
+      <input type="text" id="modelName" placeholder="모델 이름 (기본: gemini-3.6-flash)" autocomplete="off">
+      <div class="setting-note">API 키는 이 브라우저의 localStorage에만 저장되며 Firestore에 저장하지 않습니다. 공개 사이트에서 다른 사람과 이 키를 공유하지 마세요.</div>
+    </details>
+    <div class="chat-log" id="chatLog"></div>
+    <div class="chat-input-row">
+      <textarea id="chatInput" placeholder="메시지 입력..." maxlength="4000"></textarea>
+      <button type="button" id="chatSend">전송</button>
+    </div>
+    <div class="chat-actions">
+      <button type="button" class="chat-clear" id="chatClear">대화 기록 지우기</button>
+    </div>
+  `;
+
+  const apiKeyInput = root.querySelector('#apiKey');
+  const modelInput = root.querySelector('#modelName');
+  const chatLog = root.querySelector('#chatLog');
+  const chatInput = root.querySelector('#chatInput');
+  const sendBtn = root.querySelector('#chatSend');
+  const clearBtn = root.querySelector('#chatClear');
+
+  apiKeyInput.value = localStorage.getItem('hub_gemini_key') || '';
+  modelInput.value = localStorage.getItem('hub_gemini_model') || 'gemini-3.6-flash';
+
+  apiKeyInput.addEventListener('change', () => {
+    localStorage.setItem('hub_gemini_key', apiKeyInput.value.trim());
+  });
+
+  modelInput.addEventListener('change', () => {
+    localStorage.setItem('hub_gemini_model', modelInput.value.trim() || 'gemini-3.6-flash');
+  });
+
+  let history = loadChatHistory(historyKey);
+
+  function saveChatHistory(){
+    // 지나치게 커지지 않도록 최근 60개 메시지만 저장.
+    history = history.slice(-60);
+    localStorage.setItem(historyKey, JSON.stringify(history));
+  }
+
+  function renderHistory(){
+    chatLog.innerHTML = '';
+    history.forEach(message => appendMessageElement(message.role, message.text));
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  function appendMessageElement(role, text, extraClass = ''){
+    const div = document.createElement('div');
+    div.className = `msg ${role === 'user' ? 'user' : 'ai'} ${extraClass}`.trim();
+    div.textContent = text;
+    chatLog.appendChild(div);
+    return div;
+  }
+
+  function addMessage(role, text){
+    history.push({role, text});
+    appendMessageElement(role, text);
+    saveChatHistory();
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  async function send(){
+    const text = chatInput.value.trim();
+    if(!text || sendBtn.disabled) return;
+
+    const apiKey = (apiKeyInput.value || '').trim();
+    const model = (modelInput.value || 'gemini-3.6-flash').trim();
+
+    if(!apiKey){
+      addMessage('model', '먼저 위 ⚙ API 설정에서 Gemini API 키를 입력해줘.');
+      return;
+    }
+
+    // 사용자가 입력창에서 직접 바꾼 값도 바로 저장.
+    localStorage.setItem('hub_gemini_key', apiKey);
+    localStorage.setItem('hub_gemini_model', model || 'gemini-3.6-flash');
+
+    addMessage('user', text);
+    chatInput.value = '';
+
+    const thinkingEl = appendMessageElement('model', '...생각 중', 'thinking');
+    sendBtn.disabled = true;
+    sendBtn.textContent = '전송 중...';
+
+    const contents = history.map(message => ({
+      role: message.role === 'user' ? 'user' : 'model',
+      parts: [{text: message.text}]
+    }));
+
+    try{
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model || 'gemini-3.6-flash')}:generateContent`,
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'x-goog-api-key':apiKey
+          },
+          body:JSON.stringify({contents})
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+      thinkingEl.remove();
+
+      if(!response.ok){
+        const apiMessage = data?.error?.message || '';
+        let friendly = `Gemini 요청 실패 (${response.status}).`;
+
+        if(response.status === 400) friendly += ' 모델 이름이나 요청 형식을 확인해줘.';
+        else if(response.status === 401 || response.status === 403) friendly += ' API 키를 확인해줘.';
+        else if(response.status === 429) friendly += ' 요청 한도에 도달했을 수 있어.';
+        else if(response.status >= 500) friendly += ' Gemini 서버에서 오류가 발생했어.';
+
+        if(apiMessage) friendly += `\n${apiMessage}`;
+        addMessage('model', friendly);
+        return;
+      }
+
+      const replyText = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('')
+        || '응답 내용을 가져오지 못했어.';
+
+      addMessage('model', replyText);
+    }catch(error){
+      thinkingEl.remove();
+      console.error('Gemini 요청 오류:', error);
+      addMessage('model', '네트워크 오류가 발생했어. 인터넷 연결과 API 키를 확인해줘.');
+    }finally{
+      sendBtn.disabled = false;
+      sendBtn.textContent = '전송';
+      chatInput.focus();
+    }
+  }
+
+  sendBtn.addEventListener('click', send);
+  chatInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      send();
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    history = [];
+    localStorage.removeItem(historyKey);
+    renderHistory();
+    showToast('대화 기록을 지웠어요.');
+  });
+
+  refreshFns.chat = () => {
+    // 로그인 사용자 변경 등으로 창이 다시 갱신될 때 현재 저장 기록을 불러옴.
+    const latestUid = useCloud && auth?.currentUser ? auth.currentUser.uid : 'local';
+    const latestKey = `hub_chat_history_${latestUid}`;
+    history = loadChatHistory(latestKey);
+    renderHistory();
+  };
+
+  renderHistory();
+}
+
+function loadChatHistory(key){
+  try{
+    const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+    if(!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(item => item && (item.role === 'user' || item.role === 'model') && typeof item.text === 'string')
+      .slice(-60);
+  }catch(e){
+    console.error('채팅 기록 불러오기 실패:', e);
+    return [];
+  }
+}
+
+/* =========================================================
+   9. 랜덤 공부하기
+   ========================================================= */
+function renderStudy(root){
+  root.innerHTML = `
+    <div class="study-card empty" id="studyCard">
+      <div class="word">"공부시작"을 눌러보세요</div>
+    </div>
+    <div class="study-btns">
+      <button type="button" id="studyStart">공부시작</button>
+    </div>
+    <div class="study-list-wrap">
+      <details>
+        <summary>📋 키워드 목록 편집 (한 줄에 하나씩)</summary>
+        <textarea id="kwTextarea" placeholder="예)\n클로저\n이벤트 루프\n재귀함수"></textarea>
+        <button type="button" class="save-btn" id="kwSave">저장</button>
+      </details>
+    </div>
+  `;
+
+  const card = root.querySelector('#studyCard');
+  const textarea = root.querySelector('#kwTextarea');
+  const saveBtn = root.querySelector('#kwSave');
+
+  function getList(){
+    return Array.isArray(hubData.studyKeywords) && hubData.studyKeywords.length
+      ? hubData.studyKeywords
+      : [...DEFAULT_KEYWORDS];
+  }
+
+  function refreshTextarea(){
+    textarea.value = getList().join('\n');
+  }
+
+  refreshTextarea();
+
+  refreshFns.study = () => {
+    // 사용자가 현재 편집 중이라면 입력 내용을 덮어쓰지 않도록
+    // textarea가 포커스되어 있을 때는 건너뜀.
+    if(document.activeElement !== textarea){
+      refreshTextarea();
+    }
+  };
+
+  saveBtn.addEventListener('click', async () => {
+    const lines = textarea.value
+      .split('\n')
+      .map(text => text.trim())
+      .filter(Boolean)
+      .slice(0, 500);
+
+    hubData.studyKeywords = lines;
+    await persistData();
+
+    saveBtn.textContent = '저장됨 ✓';
+    setTimeout(() => saveBtn.textContent = '저장', 1000);
+  });
+
+  root.querySelector('#studyStart').addEventListener('click', () => {
+    const list = getList();
+
+    if(!list.length){
+      card.className = 'study-card empty';
+      card.innerHTML = '<div class="word">먼저 아래 목록 편집에서 키워드를 추가해줘</div>';
+      return;
+    }
+
+    const pick = list[Math.floor(Math.random() * list.length)];
+    card.className = 'study-card';
+    card.innerHTML = '';
+    const word = document.createElement('div');
+    word.className = 'word';
+    word.textContent = pick;
+    card.appendChild(word);
+  });
+}
+
+/* =========================================================
+   10. 예시용 빈 칸
+   ========================================================= */
+function renderBlank(root){
+  root.innerHTML = `
+    <div class="empty-guide">
+      이 칸은 새 기능을 직접 추가하는 연습용 자리예요.<br><br>
+      1) 위쪽 <b>sections</b> 배열에 { id, title, render } 한 줄 추가<br>
+      2) render 함수(예: renderBlank처럼)를 하나 정의<br>
+      3) 그 함수 안에서 root.innerHTML로 원하는 내용 채우기
+      <code>{ id:'memo', title:'메모장', render:renderMemo }</code>
+      <br><br>
+      <b>현재 Firestore 데이터 위치</b><br>
+      로그인한 사용자의 UID마다 아래처럼 따로 저장됩니다.<br>
+      <code>users/{내 UID}/hub/main</code>
+      <br>
+      그래서 다른 Firebase 사용자의 데이터와 섞이지 않습니다.
+      <br><br>
+      <b>Gemini 키</b><br>
+      Gemini API 키는 이 HTML 파일에 적지 않습니다. 사이트의 ⚙ API 설정에서 직접 입력합니다.
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
